@@ -1,13 +1,22 @@
+"""Задача 1 (ПОТОКИ) - Скачивание файлов с прогрессом
+Создайте программу, которая скачивает 5 разных изображений с заданных URL. Каждое скачивание должно выполняться в отдельном потоке. Во время скачивания каждый поток должен выводить сообщение о начале и завершении загрузки. Основной поток должен ждать завершения всех загрузок и вывести итоговое сообщение.
+
+Требования:
+
+Использовать библиотеку requests или urllib
+
+Каждый поток загружает свой URL
+
+Вывод в консоль: "Начало загрузки {url}" и "Завершено: {url}"
+
+После всех загрузок: "Все файлы загружены!"
+
+Цель: Понять базовый запуск потоков и join().
+
+"""
+
 import requests
 import threading
-
-def fetch_image(url, filename):
-    print(f"Начало загрузки {url}")
-    img = requests.get(url).content
-    with open(filename, 'wb') as handler:
-        handler.write(img)
-    print(f"Завершено: {url}")
-
 
 urls = [
     "https://images.unsplash.com/photo-1575936123452-b67c3203c357?fm=jpg&q=60&w=3000&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8aW1hZ2V8ZW58MHx8MHx8fDA%3D",
@@ -17,16 +26,33 @@ urls = [
     "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTFYqoKTu_o3Zns2yExbst2Co84Gpc2Q1RJbA&s",
     ]
 
-threads = []
 
-for index, url in enumerate(urls):
-    t = threading.Thread(target=fetch_image, args=(url, f"image_{index+1}.jpg"))
-    threads.append(t)
+def write_image_to_file(url: str, filename: str):
+    print(f"Начало загрузки {url}")
+    img = requests.get(url).content
+    with open(filename, 'wb') as handler:
+        handler.write(img)
+    print(f"Завершено: {url}")
 
-for t in threads:
-    t.start()
 
-for t in threads:
-    t.join()
+def main():
+    threads = []
 
-print("Все файлы загружены")
+    for index, url in enumerate(urls):
+        thread = threading.Thread(
+            target=write_image_to_file,
+            args=(url, f"images/image_{index+1}.jpg"),
+        )
+        threads.append(thread)
+
+    for thread in threads:
+        thread.start()
+
+    for thread in threads:
+        thread.join()
+
+    print("Все файлы загружены")
+
+
+if __name__ == '__main__':
+    main()
