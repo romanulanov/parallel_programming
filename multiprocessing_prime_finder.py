@@ -35,16 +35,15 @@ def check_prime_num(num: int):
 
 def find_primes(ranges: tuple, q: Queue | None = None):
     start, end = ranges
-    count = 0
-    start_time = time.time()
+    primes = []
+
     for num in range(start, end):
         if check_prime_num(num):
-            count += 1
-    elapsed = int((time.time() - start_time))
-    if q:
-        q.put(f"Найдено {count} простых чисел за {elapsed} секунд")
+            primes.append(num)
+    if q is not None:
+        q.put(primes)
     else:
-        return f"Найдено {count} простых чисел за {elapsed} секунд"
+        return primes
 
 
 ranges = [
@@ -56,23 +55,28 @@ ranges = [
 
 
 def main():
+    start_time = time.time()
+    all_primes = []
     queue = Queue()
     processes = []
 
-    for index in range(len(ranges)):
-        processes.append(Process(
+    for interval in ranges:
+        process = Process(
             target=find_primes,
-            args=(ranges[index], queue),
-            )
+            args=(interval, queue),
         )
-    for process in processes:
+        processes.append(process)
         process.start()
     for process in processes:
-        print(queue.get())
+        all_primes += queue.get()
     for process in processes:
         process.join()
-
-    print(f"В одном потоке: \n{find_primes((1, 1_000_000))}")
+    elapsed = int((time.time() - start_time))
+    print(f"Найдено {len(all_primes)} простых чисел за {elapsed} секунд")
+    start_time = time.time()
+    single_count = len(find_primes((1, 1_000_000)))
+    elapsed = int((time.time() - start_time))
+    print(f"В одном потоке:\n{single_count} простых чисел за {elapsed} секунд")
 
 
 if __name__ == '__main__':
