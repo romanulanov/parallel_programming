@@ -1,6 +1,9 @@
 """
 Задача 2 (ПРОЦЕССЫ) - Параллельный поиск простых чисел
-Напишите программу, которая ищет все простые числа в диапазоне от 1 до 1_000_000, используя 4 процесса. Каждый процесс должен проверять свой диапазон чисел. Результаты от всех процессов собираются в основной процесс и выводятся количество найденных простых чисел и время выполнения.
+Напишите программу, которая ищет все простые числа в диапазоне от 1 до
+1_000_000, используя 4 процесса. Каждый процесс должен проверять свой
+диапазон чисел. Результаты от всех процессов собираются в основной
+процесс и выводятся количество найденных простых чисел и время выполнения.
 
 Требования:
 
@@ -30,7 +33,7 @@ def check_prime_num(num: int):
         return True
 
 
-def find_primes(ranges: tuple, q: Queue):
+def find_primes(ranges: tuple, q: Queue | None = None):
     start, end = ranges
     count = 0
     start_time = time.time()
@@ -38,7 +41,10 @@ def find_primes(ranges: tuple, q: Queue):
         if check_prime_num(num):
             count += 1
     elapsed = int((time.time() - start_time))
-    q.put(f"Найдено {count} простых чисел за {elapsed} секунд")
+    if q:
+        q.put(f"Найдено {count} простых чисел за {elapsed} секунд")
+    else:
+        return f"Найдено {count} простых чисел за {elapsed} секунд"
 
 
 ranges = [
@@ -54,7 +60,11 @@ def main():
     processes = []
 
     for index in range(len(ranges)):
-        processes.append(Process(target=find_primes, args=(ranges[index], queue)))
+        processes.append(Process(
+            target=find_primes,
+            args=(ranges[index], queue),
+            )
+        )
     for process in processes:
         process.start()
     for process in processes:

@@ -1,6 +1,8 @@
 """
 Задача 3 (АСИНХРОННОСТЬ) - Асинхронный ping серверов
-Напишите программу, которая проверяет доступность списка веб-сайтов. Для каждого URL программа должна асинхронно отправить HTTP-запрос и замерить время ответа. Вывести результат в формате: "{url} - {status} - {time}ms".
+Напишите программу, которая проверяет доступность списка веб-сайтов. Для
+каждого URL программа должна асинхронно отправить HTTP-запрос и замерить время
+ответа. Вывести результат в формате: "{url} - {status} - {time}ms".
 
 Требования:
 
@@ -8,7 +10,8 @@
 
 Список из 10 разных сайтов (например, google.com, github.com, yandex.ru)
 
-Ограничить количество одновременных запросов до 3 с помощью семафора (asyncio.Semaphore)
+Ограничить количество одновременных запросов до 3 с помощью семафора
+(asyncio.Semaphore)
 
 Все запросы должны выполняться конкурентно
 
@@ -42,7 +45,10 @@ async def check_site_status(url: str, session: ClientSession, sem: Semaphore):
     async with sem:
         start_time = time.time()
         try:
-            async with session.head(url, ssl=ssl.create_default_context(cafile=certifi.where())) as response:
+            async with session.head(
+                url,
+                ssl=ssl.create_default_context(cafile=certifi.where()),
+            ) as response:
                 response.raise_for_status()
                 elapsed = int((time.time() - start_time) * 1000)
                 print(f"{url} - {response.status} - {elapsed} ms")
