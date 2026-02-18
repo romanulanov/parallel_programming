@@ -36,10 +36,11 @@ def task_generator(work_time:int = 10):
 def task_logger():
     while True:
         task = q.get()
-    #TODO бесконечный цикл берёт результат из очереди.queue.get
-    #TODO завершение при получении None-задачи
+        if not task:
+            break
+        with open("file.txt", "a", encoding="utf-8") as f:
+            f.write(task)
     #TODO для остановки использовать статус событий Event 
-    #TODO записывать результаты в файл
 
 
 def task_worker(worker_id: int):
