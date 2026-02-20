@@ -14,40 +14,44 @@
 - Реализовать graceful shutdown всех потоков (корректное завершение работы)    
 **Цель:** Понять взаимодействие потоков через очереди, thread-safe структуры, координацию потоков.'''
 from queue import Queue
-from random import randint
+from random import randint, uniform
 from time import time, sleep
 from threading import Event
 
-q = Queue()
+q1 = Queue()
+q2 = Queue()
+stop_event = Event()
 
 def task_generator(work_time:int = 10):
     start_time = time()
     while True:
-        q.put(randint(1, 100))
+        if elapsed >= 10 or stop_event.is_set():
+            break
+        q1.put(randint(1, 100))
         sleep(0.5)
         elapsed = int((time.time() - start_time))
-        if elapsed >= 10:
-            break
-    q.put(None)
-    q.shutdown()
+    q1.put(None)
+    q1.shutdown()
     #TODO остановка из-за статуса событий Event
     
 
 def task_logger():
     while True:
-        task = q.get()
-        if not task:
+        task = q2.get()
+        if not task or stop_event.is_set():
             break
         with open("file.txt", "a", encoding="utf-8") as f:
             f.write(task)
-    #TODO для остановки использовать статус событий Event 
 
 
 def task_worker(worker_id: int):
-    #TODO бесконечный цикл берёт задачи из очереди.queue.get
-    #TODO завершение при получении None-задачи
-    #TODO для остановки использовать статус событий Event 
-    #TODO помечать завершённые задачи в очереди task_done
+    while True:
+        task = q1.get()
+        q1.task_done()
+        if not task or stop_event.is_set():
+            break
+        q2.put(task**2)
+        sleep(uniform(0.1, 0.5))
 
 
 def print_info():
