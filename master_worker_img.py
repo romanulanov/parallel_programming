@@ -23,33 +23,46 @@ grayscale, rotate)
 **Цель:**Понять межпроцессное взаимодействие, управление пулом процессов,
 обработку shared state.
 """
-import os
-from multiprocessing import Queue, Manager
+
+from multiprocessing import Queue, Manager, Process
+from os import listdir, makedirs
+from os.path import basename, isfile, join, exists
 from PIL import Image
 
 q1: Queue = Queue()
 
 
-def resize_img(filename):
+def apply_pipeline(file_path, functions):
+    for func in functions:
+        func(file_path)
+
+
+def master_process(path: str):
+    file_paths = [join(path, file_name) for file_name in listdir(path) if isfile(join(path, file_name))]
+    operations = [resize_image, grayscale_image, rotate_image]
+    worker_processes = [Process(target=apply_pipeline, args=(file_path, operations)) for file_path in file_paths]
+
+
+def resize_image(filename: str):
     size = (500, 500)
-    img = Image.open(filename).resize(size, resample=Image.BILINEAR)
-    if not os.path.exists('output'):
-        os.makedirs('output')
-    filename = os.path.basename(filename)
-    img.save(f'output/resized_{filename}')
+    image = Image.open(filename).resize(size, resample=Image.BILINEAR)
+    if not exists('output'):
+        makedirs('output')
+    filename = basename(filename)
+    image.save(f'output/resized_{filename}')
 
 
-def grayscale_img(filename):
-    img = Image.open(filename).convert('L')
-    if not os.path.exists('output'):
-        os.makedirs('output')
-    filename = os.path.basename(filename)
-    img.save(f'output/grayscaled_{filename}')
+def grayscale_image(filename: str):
+    image = Image.open(filename).convert('L')
+    if not exists('output'):
+        makedirs('output')
+    filename = basename(filename)
+    image.save(f'output/grayscaled_{filename}')
 
 
-def rotate_img(filename):
-    if not os.path.exists('output'):
-        os.makedirs('output')
-    img = Image.open(filename).rotate(45)
-    filename = os.path.basename(filename)
-    img.save(f'output/rotate_{filename}')
+def rotate_image(filename: str):
+    if not exists('output'):
+        makedirs('output')
+    image = Image.open(filename).rotate(45)
+    filename = basename(filename)
+    image.save(f'output/rotate_{filename}')
