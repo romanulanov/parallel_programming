@@ -28,41 +28,46 @@ from multiprocessing import Queue, Manager, Process
 from os import listdir, makedirs
 from os.path import basename, isfile, join, exists
 from PIL import Image
+from typing import Callable
 
 q1: Queue = Queue()
 
 
-def apply_pipeline(file_path, functions):
+def apply_pipeline(file_path: str, functions: list[Callable]) -> None:
     for func in functions:
         func(file_path)
 
 
-def master_process(path: str):
-    file_paths = [join(path, file_name) for file_name in listdir(path) if isfile(join(path, file_name))]
+def master_process(path: str) -> None:
+    file_paths = [
+        full_path for file in listdir(path) if isfile(
+            full_path := join(path, file)
+        )
+    ]
     operations = [resize_image, grayscale_image, rotate_image]
     worker_processes = [Process(target=apply_pipeline, args=(file_path, operations)) for file_path in file_paths]
 
 
-def resize_image(filename: str):
+def resize_image(file_name: str) -> None:
     size = (500, 500)
-    image = Image.open(filename).resize(size, resample=Image.BILINEAR)
+    image = Image.open(file_name).resize(size, resample=Image.BILINEAR)
     if not exists('output'):
         makedirs('output')
-    filename = basename(filename)
-    image.save(f'output/resized_{filename}')
+    file_name = basename(file_name)
+    image.save(f'output/resized_{file_name}')
 
 
-def grayscale_image(filename: str):
-    image = Image.open(filename).convert('L')
+def grayscale_image(file_name: str) -> None:
+    image = Image.open(file_name).convert('L')
     if not exists('output'):
         makedirs('output')
-    filename = basename(filename)
-    image.save(f'output/grayscaled_{filename}')
+    file_name = basename(file_name)
+    image.save(f'output/grayscaled_{file_name}')
 
 
-def rotate_image(filename: str):
+def rotate_image(file_name: str) -> None:
     if not exists('output'):
         makedirs('output')
-    image = Image.open(filename).rotate(45)
-    filename = basename(filename)
-    image.save(f'output/rotate_{filename}')
+    image = Image.open(file_name).rotate(45)
+    file_name = basename(file_name)
+    image.save(f'output/rotate_{file_name}')
