@@ -24,13 +24,14 @@ grayscale, rotate)
 обработку shared state.
 """
 
-from multiprocessing import Queue, Manager, Process
+from multiprocessing import Queue, Manager, Process, Event
 from os import listdir, makedirs
 from os.path import basename, isfile, join, exists
 from PIL import Image
 from typing import Callable
 
-q1: Queue = Queue()
+queue: Queue = Queue()
+stop_event = Event()
 
 
 def apply_pipeline(file_path: str, functions: list[Callable]) -> None:
@@ -38,14 +39,31 @@ def apply_pipeline(file_path: str, functions: list[Callable]) -> None:
         func(file_path)
 
 
-def master_process(path: str) -> None:
+def master_process(path: str, queue: Queue) -> None:
     file_paths = [
         full_path for file in listdir(path) if isfile(
             full_path := join(path, file)
         )
     ]
     operations = [resize_image, grayscale_image, rotate_image]
-    worker_processes = [Process(target=apply_pipeline, args=(file_path, operations)) for file_path in file_paths]
+
+    workers = [Process(target=task_worker, args=(queue,)) for _ in range(4)]
+    for process in workers:
+        process.start()
+    for file_path in file_paths:
+        queue.put((file_path, operations))
+    for process in workers:
+        process.join()
+
+
+def task_worker(queue: Queue):
+    while True:
+        task = queue.get()
+        if task is None:
+            break
+        file_path, operations = task
+        apply_pipeline(file_path, operations)
+        queue.put(None)
 
 
 def resize_image(file_name: str) -> None:
@@ -71,3 +89,11 @@ def rotate_image(file_name: str) -> None:
     image = Image.open(file_name).rotate(45)
     file_name = basename(file_name)
     image.save(f'output/rotate_{file_name}')
+
+
+def main():
+    master_process("images/", queue)
+
+
+if __name__ == '__main__':
+    main()
