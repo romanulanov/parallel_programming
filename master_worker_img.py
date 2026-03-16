@@ -28,15 +28,17 @@ from multiprocessing import Queue, Manager, Process, Event
 from os import listdir, makedirs
 from os.path import basename, isfile, join, exists
 from PIL import Image
+from time import time
 from typing import Callable
+
 
 queue: Queue = Queue()
 stop_event = Event()
 
 
-def apply_pipeline(file_path: str, functions: list[Callable]) -> None:
+def apply_pipeline(file_path: str, functions: list[Callable], stats: list) -> None:
     for func in functions:
-        func(file_path)
+        stats.append(func(file_path))
 
 
 def master_process(path: str, queue: Queue) -> None:
@@ -46,49 +48,60 @@ def master_process(path: str, queue: Queue) -> None:
         )
     ]
     operations = [resize_image, grayscale_image, rotate_image]
+    with Manager() as manager:
+        statistics = manager.list()
+        workers = [Process(target=task_worker, args=(queue, statistics)) for _ in range(4)]
+        for process in workers:
+            process.start()
+        for file_path in file_paths:
+            queue.put((file_path, operations))
+        for process in workers:
+            process.join()
+        print("".join(statistics))
 
-    workers = [Process(target=task_worker, args=(queue,)) for _ in range(4)]
-    for process in workers:
-        process.start()
-    for file_path in file_paths:
-        queue.put((file_path, operations))
-    for process in workers:
-        process.join()
 
-
-def task_worker(queue: Queue):
+def task_worker(queue: Queue, statistics):
     while True:
         task = queue.get()
         if task is None:
             break
         file_path, operations = task
-        apply_pipeline(file_path, operations)
+        apply_pipeline(file_path, operations, statistics)
         queue.put(None)
 
 
-def resize_image(file_name: str) -> None:
+def resize_image(file_name: str) -> str:
+    start_time = time()
     size = (500, 500)
     image = Image.open(file_name).resize(size, resample=Image.BILINEAR)
     if not exists('output'):
         makedirs('output')
     file_name = basename(file_name)
     image.save(f'output/resized_{file_name}')
+    elapsed = round((time() - start_time), 3)
+    return f'Файл output/resized_{file_name} за {elapsed} c\n'
 
 
-def grayscale_image(file_name: str) -> None:
+def grayscale_image(file_name: str) -> str:
+    start_time = time()
     image = Image.open(file_name).convert('L')
     if not exists('output'):
         makedirs('output')
     file_name = basename(file_name)
     image.save(f'output/grayscaled_{file_name}')
+    elapsed = round((time() - start_time), 3)
+    return f'Файл output/grayscaled_{file_name} за {elapsed} c\n'
 
 
-def rotate_image(file_name: str) -> None:
+def rotate_image(file_name: str) -> str:
+    start_time = time()
     if not exists('output'):
         makedirs('output')
     image = Image.open(file_name).rotate(45)
     file_name = basename(file_name)
     image.save(f'output/rotate_{file_name}')
+    elapsed = round((time() - start_time), 3)
+    return f'Файл output/rotate_{file_name} за {elapsed} c\n'
 
 
 def main():
