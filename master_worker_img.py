@@ -36,7 +36,11 @@ queue: Queue = Queue()
 stop_event = Event()
 
 
-def apply_pipeline(file_path: str, functions: list[Callable], stats: list) -> None:
+def apply_pipeline(
+        file_path: str,
+        functions: list[Callable],
+        stats: list,
+     ) -> None:
     for func in functions:
         stats.append(func(file_path))
 
@@ -50,7 +54,13 @@ def master_process(path: str, queue: Queue) -> None:
     operations = [resize_image, grayscale_image, rotate_image]
     with Manager() as manager:
         statistics = manager.list()
-        workers = [Process(target=task_worker, args=(queue, statistics)) for _ in range(4)]
+        workers = [
+            Process(
+                target=task_worker,
+                args=(queue, statistics),
+                )
+            for _ in range(4)
+            ]
         for process in workers:
             process.start()
         for file_path in file_paths:
@@ -60,7 +70,7 @@ def master_process(path: str, queue: Queue) -> None:
         print("".join(statistics))
 
 
-def task_worker(queue: Queue, statistics):
+def task_worker(queue: Queue, statistics) -> None:
     while True:
         task = queue.get()
         if task is None:
