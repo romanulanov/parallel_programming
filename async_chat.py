@@ -23,30 +23,42 @@
 asyncio, broadcast сообщений.
 
 '''
+
+from asyncio import to_thread, run, gather
 from json import dumps
-from websockets.sync.client import connect
+from websockets.asyncio.client import connect
 
 
 ROOMS = [f"room{num}" for num in range(1, 6)]
 
 
-def hello():
+async def send_message():
+    pass
+
+
+async def recieve_message():
+    pass
+
+
+async def main():
     user = {}
     name = input("Введите имя:")
     room = ""
     user["name"] = name
     while room not in ROOMS:
         room = input(
-            f"Введите комнату {[f'room{num}' for num in range(1, 6)]}: "
+            f"Введите комнату ({', '.join(ROOMS)}): "
         )
     user["room"] = room
     uri = f"ws://localhost:8765/{room}"
-    with connect(uri) as websocket:
-        websocket.send(dumps(user))
+    async with connect(uri) as websocket:
+        await websocket.send(dumps(user))
         print(f">>> На сервер заходит {name}.")
-        greeting = websocket.recv()
+        greeting = await websocket.recv()
         print(f"<<< {greeting}")
+        tasks = [send_message()]
+        await gather(*tasks)
 
 
 if __name__ == "__main__":
-    hello()
+    run(main())
