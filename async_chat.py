@@ -23,17 +23,30 @@
 asyncio, broadcast сообщений.
 
 '''
-
-import asyncio
-
-from websockets.asyncio.client import connect
+from json import dumps
+from websockets.sync.client import connect
 
 
-async def hello():
-    async with connect("ws://127.0.0.1:8765") as websocket:
-        await websocket.send("Hello world!")
-        message = await websocket.recv()
-        print(f"Received: {message}")
+ROOMS = [f"room{num}" for num in range(1, 6)]
+
+
+def hello():
+    user = {}
+    name = input("Введите имя:")
+    room = ""
+    user["name"] = name
+    while room not in ROOMS:
+        room = input(
+            f"Введите комнату {[f'room{num}' for num in range(1, 6)]}: "
+        )
+    user["room"] = room
+    uri = f"ws://localhost:8765/{room}"
+    with connect(uri) as websocket:
+        websocket.send(dumps(user))
+        print(f">>> На сервер заходит {name}.")
+        greeting = websocket.recv()
+        print(f"<<< {greeting}")
+
 
 if __name__ == "__main__":
-    asyncio.run(hello())
+    hello()

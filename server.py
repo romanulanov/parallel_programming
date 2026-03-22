@@ -1,13 +1,20 @@
 import asyncio
 
+from json import loads
 from websockets.asyncio.server import serve
+
+
+rooms: dict[str, set] = {}
+for num in range(1, 6):
+    rooms[f"room{num}"] = set()
 
 
 async def hello(websocket):
     try:
-        name = await websocket.recv()
-        print(f"<<< {name}")
-        greeting = f"Hello {name}!"
+        user = await websocket.recv()
+        user = loads(user)
+        print(f"<<< На сервер заходит {user['name']}")
+        greeting = f"Привет {user['name']} из комнаты {user['room']}!"
         await websocket.send(greeting)
         print(f">>> {greeting}")
     except Exception as e:
@@ -16,7 +23,7 @@ async def hello(websocket):
 
 async def main():
     async with serve(hello, "127.0.0.1", 8765) as server:
-        print("Server started on ws://127.0.0.1:8765")
+        print("Запущен сервер ws://127.0.0.1:8765")
         await server.serve_forever()
 
 if __name__ == "__main__":
