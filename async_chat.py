@@ -32,12 +32,15 @@ from websockets.asyncio.client import connect
 ROOMS = [f"room{num}" for num in range(1, 6)]
 
 
-async def send_message():
-    pass
+async def send_message(websocket):
+    while True:
+        message = await to_thread(input, "Введите сообщение:")
+        await websocket.send(message)
 
 
-async def recieve_message():
-    pass
+async def recieve_message(websocket):
+    async for message in websocket:
+        print(message)
 
 
 async def main():
@@ -56,8 +59,7 @@ async def main():
         print(f">>> На сервер заходит {name}.")
         greeting = await websocket.recv()
         print(f"<<< {greeting}")
-        tasks = [send_message()]
-        await gather(*tasks)
+        await gather(send_message(websocket), recieve_message(websocket))
 
 
 if __name__ == "__main__":

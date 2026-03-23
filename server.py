@@ -17,6 +17,9 @@ async def hello(websocket):
         greeting = f"Привет {user['name']} из комнаты {user['room']}!"
         await websocket.send(greeting)
         print(f">>> {greeting}")
+        async for message in websocket:
+            print(f"Сообщение в {user['room']} от {user['name']}: {message}")
+
     except Exception as e:
         print(f"Error: {e}")
 
