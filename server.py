@@ -23,15 +23,8 @@ async def handler(websocket):
         user = await websocket.recv()
         user = loads(user)
         user, room_id = user['name'], user['room']
-        print(f"<<< На сервер заходит {user}")
-        greeting = f"Привет {user} из комнаты {room_id}!"
-        if rooms[room_id]["messages"]:
-            for message in rooms[room_id]["messages"]:
-                await websocket.send(message)
-        if len(rooms[room_id]["users"]) > 1:
-            await broadcast(room_id, f"{user} теперь с нами!")
-        await websocket.send(greeting)
-        print(f">>> {greeting}")
+        greeting = f"{user} зашёл в комнату {room_id}!"
+        await broadcast(room_id, greeting, exclude=websocket)
         rooms[room_id]["users"].add(websocket)
         async for message in websocket:
             await broadcast(room_id, f"{user} пишет: {message}", exclude=websocket)
@@ -39,8 +32,7 @@ async def handler(websocket):
     except Exception as e:
         print(f"Error: {e}")
     finally:
-        await broadcast(room_id, f"{user} вышел!", exclude=websocket)
-        rooms[room_id]["users"].remove(websocket)
+        await broadcast(room_id, f"{user} покинул комнату {room_id}!", exclude=websocket)
 
 
 async def main():

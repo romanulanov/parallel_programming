@@ -56,9 +56,6 @@ async def main():
     uri = f"ws://localhost:8765/{room}"
     async with connect(uri) as websocket:
         await websocket.send(dumps(user))
-        print(f">>> На сервер заходит {name}.")
-        greeting = await websocket.recv()
-        print(f"<<< {greeting}")
         await gather(send_message(websocket), recieve_message(websocket))
 
 
