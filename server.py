@@ -24,15 +24,21 @@ async def handler(websocket):
         user = loads(user)
         user, room_id = user['name'], user['room']
         greeting = f"{user} зашёл в комнату {room_id}!"
+        for message in rooms[room_id]["messages"]:
+            await websocket.send(message)
         await broadcast(room_id, greeting, exclude=websocket)
         rooms[room_id]["users"].add(websocket)
         async for message in websocket:
             await broadcast(room_id, f"{user} пишет: {message}", exclude=websocket)
             rooms[room_id]["messages"].append(f"{user} написал: {message}")
+            # if message == "/users":
+            #    for user in rooms[room_id]["users"]:
+            #        await websocket.send(user)
     except Exception as e:
         print(f"Error: {e}")
     finally:
         await broadcast(room_id, f"{user} покинул комнату {room_id}!", exclude=websocket)
+        rooms[room_id]["users"].remove(websocket)
 
 
 async def main():
